@@ -21,6 +21,8 @@
 // THE SOFTWARE.
 //
 #import <Foundation/Foundation.h>
+#import "sqlite_statement.h"
+#import "sqlite_cursor.h"
 #import "../sqlite_database.h"
 #import <memory>
 
@@ -35,10 +37,16 @@
 -(const std::shared_ptr<SQLiteDatabase> &)cxxObject;
 -(BOOL)transaction:(void(^)())protectedBlock;
 +(BOOL)transaction:(void(^)())protectedBlock;
+-(BOOL)exec:(NSString *)sql;
++(BOOL)exec:(NSString *)sql;
+-(BOOL)exec:(NSString *)sql withBlock:(void(^)(NZSQLiteCursor *))block;
++(BOOL)exec:(NSString *)sql withBlock:(void(^)(NZSQLiteCursor *))block;
+-(BOOL)exec:(NSString *)sql withBlock:(void(^)(NZSQLiteCursor *))block limit:(size_t)limit;
++(BOOL)exec:(NSString *)sql withBlock:(void(^)(NZSQLiteCursor *))block limit:(size_t)limit;
 -(BOOL)createTableForClass:(Class)className;
 +(BOOL)createTableForClass:(Class)className;
--(BOOL)createTableForClass:(Class)className withKeys:(NSSet *)keys;
-+(BOOL)createTableForClass:(Class)className withKeys:(NSSet *)keys;
+-(BOOL)createTableForClass:(Class)className withKeys:(NSArray *)keyList;
++(BOOL)createTableForClass:(Class)className withKeys:(NSArray *)keyList;
 -(id)selectObjectOfClass:(Class)className sql:(NSString *)sql;
 +(id)selectObjectOfClass:(Class)className sql:(NSString *)sql;
 -(NSMutableArray *)selectObjectsOfClass:(Class)className sql:(NSString *)sql;

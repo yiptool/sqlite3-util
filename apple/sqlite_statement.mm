@@ -22,6 +22,7 @@
 //
 #import "sqlite_statement.h"
 #import "sqlite_database.h"
+#import "objc_properties.h"
 #import <yip-imports/cxx-util/macros.h>
 #import <cstdlib>
 #import <exception>
@@ -256,6 +257,60 @@
 	catch (const std::exception & e)
 	{
 		NSLog(@"%s", e.what());
+	}
+}
+
+-(void)bindFromObject:(id)object
+{
+	if (!statement)
+		return;
+
+	NSDictionary * properties = propertiesForClass([object class]);
+	for (NSString * propertyName in properties)
+	{
+		NSString * columnName = [NSString stringWithFormat:@":%@", propertyName];
+		int column = statement->parameterIndex([columnName UTF8String], std::nothrow);
+		if (UNLIKELY(column <= 0))
+			continue;
+
+		NSString * propertyType = [properties objectForKey:propertyName];
+		@try
+		{
+			id value = [object valueForKey:propertyName];
+
+			if (!value)
+				[self bindNullAtIndex:column];
+			else if ([propertyType isEqualToString:@"NSString"])
+				[self bindString:value atIndex:column];
+			else if ([propertyType isEqualToString:@"NSNumber"] ||
+					 [propertyType isEqualToString:@"B"] ||				// bool
+					 [propertyType isEqualToString:@"c"] ||				// char
+					 [propertyType isEqualToString:@"C"] ||				// unsigned char
+					 [propertyType isEqualToString:@"s"] ||				// short
+					 [propertyType isEqualToString:@"S"] ||				// unsigned short
+					 [propertyType isEqualToString:@"i"] ||				// int
+					 [propertyType isEqualToString:@"I"] ||				// unsigned int
+					 [propertyType isEqualToString:@"q"] ||				// long
+					 [propertyType isEqualToString:@"Q"] ||				// unsigned long
+					 [propertyType isEqualToString:@"f"] ||				// float
+					 [propertyType isEqualToString:@"d"])				// double
+			{
+				if (CFNumberIsFloatType((CFNumberRef)(NSNumber *)value))
+					[self bindDouble:[value doubleValue] atIndex:column];
+				else
+					[self bindInt64:[value longLongValue] atIndex:column];
+			}
+			else
+			{
+				NSLog(@"DB: property '%@' of class '%@' has unsupported type '%@'.",
+					propertyName, [object className], propertyType);
+			}
+		}
+		@catch (id e)
+		{
+			NSLog(@"DB: unable to set value for property '%@' of class '%@': %@",
+				propertyName, [object className], e);
+		}
 	}
 }
 

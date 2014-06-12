@@ -52,3 +52,8 @@ sources:ios,osx
 	apple/sqlite_database.mm
 	apple/sqlite_statement.mm
 }
+
+app_sources:ios,osx
+{
+	test/test.mm
+}

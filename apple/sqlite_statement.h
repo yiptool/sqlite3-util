@@ -51,6 +51,7 @@
 -(void)bindString:(NSString *)value atIndex:(int)index;
 -(void)bindBlob:(const void *)data size:(size_t)size atIndex:(int)index;
 -(void)bindBlob:(const void *)data size:(size_t)size atIndex:(int)index withDestructor:(void(*)(void *))destructor;
+-(void)bindFromObject:(id)object;
 -(BOOL)exec;
 -(BOOL)execWithBlock:(void(^)(NZSQLiteCursor *))block;
 -(BOOL)execWithBlock:(void(^)(NZSQLiteCursor *))block limit:(size_t)limit;

@@ -168,8 +168,6 @@
 
 	for (NSString * propertyName in properties)
 	{
-		NSString * propertyType = [properties objectForKey:propertyName];
-
 		NSNumber * columnIndex = [columnIndexes objectForKey:propertyName];
 		if (UNLIKELY(!columnIndex))
 		{
@@ -178,12 +176,30 @@
 		}
 		int column = [columnIndex intValue];
 
+		NSString * propertyType = [properties objectForKey:propertyName];
 		@try
 		{
 			if ([propertyType isEqualToString:@"NSString"])
 				[object setValue:[self stringValueAtIndex:column] forKey:propertyName];
 			else if ([propertyType isEqualToString:@"NSNumber"])
 				[object setValue:[self numericValueAtIndex:column] forKey:propertyName];
+			else if([propertyType isEqualToString:@"B"] ||				// bool
+					[propertyType isEqualToString:@"c"] ||				// char
+					[propertyType isEqualToString:@"C"] ||				// unsigned char
+					[propertyType isEqualToString:@"s"] ||				// short
+					[propertyType isEqualToString:@"S"] ||				// unsigned short
+					[propertyType isEqualToString:@"i"] ||				// int
+					[propertyType isEqualToString:@"I"] ||				// unsigned int
+					[propertyType isEqualToString:@"q"] ||				// long
+					[propertyType isEqualToString:@"Q"] ||				// unsigned long
+					[propertyType isEqualToString:@"f"] ||				// float
+					[propertyType isEqualToString:@"d"])
+			{
+				NSNumber * number = [self numericValueAtIndex:column];
+				if (!number)
+					number = @0;
+				[object setValue:number forKey:propertyName];
+			}
 			else
 			{
 				NSLog(@"DB: property '%@' of class '%@' has unsupported type '%@'.",

@@ -92,10 +92,11 @@ static void cleanup()
 
 -(BOOL)transaction:(void(^)())protectedBlock
 {
+	if (!database)
+		return NO;
+
 	try
 	{
-		if (!database)
-			return NO;
 		database->transaction([&protectedBlock](){ if (LIKELY(protectedBlock)) protectedBlock(); });
 		return YES;
 	}
@@ -111,6 +112,85 @@ static void cleanup()
 	return [[NZSQLiteDatabase sharedDatabase] transaction:protectedBlock];
 }
 
+-(BOOL)exec:(NSString *)sql
+{
+	if (!database)
+		return NO;
+
+	try
+	{
+		NZSQLiteCursor * cursorWrapper = [NZSQLiteCursor cursor];
+		database->exec([sql UTF8String]);
+		return YES;
+	}
+	catch (const std::exception & e)
+	{
+		NSLog(@"%s", e.what());
+		return NO;
+	}
+}
+
++(BOOL)exec:(NSString *)sql
+{
+	return [[NZSQLiteDatabase sharedDatabase] exec:sql];
+}
+
+-(BOOL)exec:(NSString *)sql withBlock:(void(^)(NZSQLiteCursor *))block
+{
+	if (!database)
+		return NO;
+
+	try
+	{
+		NZSQLiteCursor * cursorWrapper = [NZSQLiteCursor cursor];
+		database->exec([sql UTF8String], [&cursorWrapper, &block](const SQLiteCursor & cursor) {
+			cursorWrapper.ref = &cursor;
+			if (block)
+				block(cursorWrapper);
+			cursorWrapper.ref = nil;
+		});
+		return YES;
+	}
+	catch (const std::exception & e)
+	{
+		NSLog(@"%s", e.what());
+		return NO;
+	}
+}
+
++(BOOL)exec:(NSString *)sql withBlock:(void(^)(NZSQLiteCursor *))block
+{
+	return [[NZSQLiteDatabase sharedDatabase] exec:sql withBlock:block];
+}
+
+-(BOOL)exec:(NSString *)sql withBlock:(void(^)(NZSQLiteCursor *))block limit:(size_t)limit
+{
+	if (!database)
+		return NO;
+
+	try
+	{
+		NZSQLiteCursor * cursorWrapper = [NZSQLiteCursor cursor];
+		database->exec([sql UTF8String], [&cursorWrapper, &block](const SQLiteCursor & cursor) {
+			cursorWrapper.ref = &cursor;
+			if (block)
+				block(cursorWrapper);
+			cursorWrapper.ref = nil;
+		}, limit);
+		return YES;
+	}
+	catch (const std::exception & e)
+	{
+		NSLog(@"%s", e.what());
+		return NO;
+	}
+}
+
++(BOOL)exec:(NSString *)sql withBlock:(void(^)(NZSQLiteCursor *))block limit:(size_t)limit
+{
+	return [[NZSQLiteDatabase sharedDatabase] exec:sql withBlock:block limit:limit];
+}
+
 -(BOOL)createTableForClass:(Class)className
 {
 	return [self createTableForClass:className withKeys:nil];
@@ -121,13 +201,14 @@ static void cleanup()
 	return [[NZSQLiteDatabase sharedDatabase] createTableForClass:className withKeys:nil];
 }
 
--(BOOL)createTableForClass:(Class)className withKeys:(NSSet *)keys
+-(BOOL)createTableForClass:(Class)className withKeys:(NSArray *)keyList
 {
 	if (!database)
 		return NO;
 
 	NSString * tableName = NSStringFromClass(className);
 	NSDictionary * properties = propertiesForClass(className);
+	NSSet * keys = [NSSet setWithArray:keyList];
 
 	SQLiteDatabase::Locker locker(*database);
 
@@ -185,9 +266,9 @@ static void cleanup()
 	return YES;
 }
 
-+(BOOL)createTableForClass:(Class)className withKeys:(NSSet *)keys
++(BOOL)createTableForClass:(Class)className withKeys:(NSArray *)keyList
 {
-	return [[NZSQLiteDatabase sharedDatabase] createTableForClass:className withKeys:keys];
+	return [[NZSQLiteDatabase sharedDatabase] createTableForClass:className withKeys:keyList];
 }
 
 -(id)selectObjectOfClass:(Class)className sql:(NSString *)sql

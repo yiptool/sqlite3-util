@@ -61,6 +61,13 @@ public:
 
 	void transaction(const std::function<void()> & protectedCode);
 
+	void exec(const char * sql);
+	void exec(const std::string & sql);
+	void exec(const char * sql, const std::function<void(const SQLiteCursor & cursor)> & onRow);
+	void exec(const std::string & sql, const std::function<void(const SQLiteCursor & cursor)> & onRow);
+	void exec(const char * sql, const std::function<void(const SQLiteCursor & cursor)> & onRow, size_t limit);
+	void exec(const std::string & sql, const std::function<void(const SQLiteCursor & cursor)> & onRow, size_t limit);
+
 private:
 	std::string m_File;
 	sqlite3 * m_Handle;

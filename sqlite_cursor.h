@@ -73,6 +73,7 @@ private:
 	SQLiteCursor(const SQLiteCursor &) = delete;
 	SQLiteCursor & operator=(const SQLiteCursor &) = delete;
 
+	friend class SQLiteDatabase;
 	friend class SQLiteStatement;
 };
 

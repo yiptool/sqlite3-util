@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 //
 #include "sqlite_database.h"
+#include "sqlite_cursor.h"
 #include <yip-imports/cxx-util/macros.h>
 #include <yip-imports/cxx-util/fmt.h>
 #include <iostream>
@@ -127,6 +128,80 @@ void SQLiteDatabase::transaction(const std::function<void()> & protectedCode)
 		throw;
 	}
 	commit(locker);
+}
+
+void SQLiteDatabase::exec(const char * sql)
+{
+	Locker locker(*this);
+
+	sqlite3_stmt * stmt = nullptr;
+	try
+	{
+		prepare(locker, stmt, sql);
+		exec(locker, stmt);
+	}
+	catch (...)
+	{
+		sqlite3_finalize(stmt);
+		throw;
+	}
+
+	sqlite3_finalize(stmt);
+}
+
+void SQLiteDatabase::exec(const std::string & sql)
+{
+	exec(sql.c_str());
+}
+
+void SQLiteDatabase::exec(const char * sql, const std::function<void(const SQLiteCursor & cursor)> & onRow)
+{
+	Locker locker(*this);
+
+	sqlite3_stmt * stmt = nullptr;
+	try
+	{
+		prepare(locker, stmt, sql);
+		exec(locker, stmt, [stmt, &onRow](){ onRow(SQLiteCursor(stmt)); });
+	}
+	catch (...)
+	{
+		sqlite3_finalize(stmt);
+		throw;
+	}
+
+	sqlite3_finalize(stmt);
+}
+
+void SQLiteDatabase::exec(const std::string & sql, const std::function<void(const SQLiteCursor & cursor)> & onRow)
+{
+	exec(sql.c_str(), onRow);
+}
+
+void SQLiteDatabase::exec(const char * sql, const std::function<void(const SQLiteCursor & cursor)> & onRow,
+	size_t limit)
+{
+	Locker locker(*this);
+
+	sqlite3_stmt * stmt = nullptr;
+	try
+	{
+		prepare(locker, stmt, sql);
+		exec(locker, stmt, [stmt, &onRow](){ onRow(SQLiteCursor(stmt)); }, limit);
+	}
+	catch (...)
+	{
+		sqlite3_finalize(stmt);
+		throw;
+	}
+
+	sqlite3_finalize(stmt);
+}
+
+void SQLiteDatabase::exec(const std::string & sql, const std::function<void(const SQLiteCursor & cursor)> & onRow,
+	size_t limit)
+{
+	exec(sql.c_str(), onRow, limit);
 }
 
 void SQLiteDatabase::begin(Locker & locker)
