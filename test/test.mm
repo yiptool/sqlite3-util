@@ -58,8 +58,13 @@ int main()
 {
 	@autoreleasepool
 	{
+		Class className = [MyObject class];
+
+		// Drop table
+		[NZSQLiteDatabase exec:[NSString stringWithFormat:@"DROP TABLE %@", NSStringFromClass(className)]];
+
 		// Create table
-		[NZSQLiteDatabase createTableForClass:[MyObject class] withKeys:@[ @"string" ]];
+		[NZSQLiteDatabase createTableForClass:className withKeys:@[ @"string", @"number" ] uniqueKeys:@[ @"string" ]];
 
 		// Insert object #1 into the database
 		MyObject * object = [[[MyObject alloc] init] autorelease];
@@ -81,12 +86,29 @@ int main()
 		[insertStmt bindFromObject:object];
 		[insertStmt exec];
 
+		// Insert object #3 into the database
+		object = [[[MyObject alloc] init] autorelease];
+		object.string = @"Third object";
+		object.number = @4321;
+		object.test0 = false;
+		object.test13 = 7.156f;
+		sqlite3_int64 row = [NZSQLiteDatabase insertObject:object];
+		NSLog(@"Row = %lld", (long long)row);
+
+		// Fetch number of objects from the database
+		sqlite3_int64 numObjects = [NZSQLiteDatabase objectCountForClass:className];
+		NSLog(@"Num objects = %lld", (long long)numObjects);
+
 		// Fetch single object from the database
-		object = [NZSQLiteDatabase selectObjectOfClass:[MyObject class] sql:@"SELECT * FROM MyObject"];
+		object = [NZSQLiteDatabase selectObjectOfClass:className index:0];
+		NSLog(@"[[%@]] [[%@]]", object.string, object.number);
+
+		// Fetch single object from the database
+		object = [NZSQLiteDatabase selectObjectOfClass:className sql:@"SELECT * FROM MyObject"];
 		NSLog(@"[[%@]] [[%@]]", object.string, object.number);
 
 		// Fetch all objects from the database
-		NSArray * objects = [NZSQLiteDatabase selectObjectsOfClass:[MyObject class] sql:@"SELECT * FROM MyObject"];
+		NSArray * objects = [NZSQLiteDatabase selectObjectsOfClass:className orderBy:@"string"];
 		for (MyObject * obj in objects)
 			NSLog(@"<<%@>> <<%@>> %@ %f", obj.string, obj.number, (obj.test0 ? @"true" : @"false"), obj.test13);
 	}

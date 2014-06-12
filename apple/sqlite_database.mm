@@ -119,7 +119,6 @@ static void cleanup()
 
 	try
 	{
-		NZSQLiteCursor * cursorWrapper = [NZSQLiteCursor cursor];
 		database->exec([sql UTF8String]);
 		return YES;
 	}
@@ -193,22 +192,44 @@ static void cleanup()
 
 -(BOOL)createTableForClass:(Class)className
 {
-	return [self createTableForClass:className withKeys:nil];
+	return [self createTableForClass:className withKeys:nil uniqueKeys:nil];
 }
 
 +(BOOL)createTableForClass:(Class)className
 {
-	return [[NZSQLiteDatabase sharedDatabase] createTableForClass:className withKeys:nil];
+	return [[NZSQLiteDatabase sharedDatabase] createTableForClass:className withKeys:nil uniqueKeys:nil];
 }
 
 -(BOOL)createTableForClass:(Class)className withKeys:(NSArray *)keyList
+{
+	return [self createTableForClass:className withKeys:keyList uniqueKeys:nil];
+}
+
++(BOOL)createTableForClass:(Class)className withKeys:(NSArray *)keyList
+{
+	return [[NZSQLiteDatabase sharedDatabase] createTableForClass:className withKeys:keyList uniqueKeys:nil];
+}
+
+-(BOOL)createTableForClass:(Class)className withUniqueKeys:(NSArray *)keyList
+{
+	return [self createTableForClass:className withKeys:nil uniqueKeys:keyList];
+}
+
++(BOOL)createTableForClass:(Class)className withUniqueKeys:(NSArray *)keyList
+{
+	return [[NZSQLiteDatabase sharedDatabase] createTableForClass:className withKeys:nil uniqueKeys:keyList];
+}
+
+-(BOOL)createTableForClass:(Class)className withKeys:(NSArray *)keyList uniqueKeys:(NSArray *)uniqueKeyList
 {
 	if (!database)
 		return NO;
 
 	NSString * tableName = NSStringFromClass(className);
 	NSDictionary * properties = propertiesForClass(className);
+
 	NSSet * keys = [NSSet setWithArray:keyList];
+	NSSet * uniqueKeys = [NSSet setWithArray:uniqueKeyList];
 
 	SQLiteDatabase::Locker locker(*database);
 
@@ -257,7 +278,29 @@ static void cleanup()
 			continue;
 		}
 
-		NSString * sql = [NSString stringWithFormat:@"CREATE INDEX IF NOT EXISTS %@ ON %@ (%@)",
+		NSString * unique = @"";
+		if ([uniqueKeys containsObject:keyName])
+			unique = @"UNIQUE ";
+
+		NSString * sql = [NSString stringWithFormat:@"CREATE %@INDEX IF NOT EXISTS %@ ON %@ (%@)",
+			unique, keyName, tableName, keyName];
+		NZSQLiteStatement * stmt = [NZSQLiteStatement statementWithDatabase:self sql:sql];
+		[stmt exec];
+	}
+
+	for (NSString * keyName in uniqueKeys)
+	{
+		if ([keys containsObject:keyName])
+			continue;
+
+		if (![properties objectForKey:keyName])
+		{
+			NSLog(@"DB: Attempted to create key on non-existent property %@ of class %@.",
+				keyName, tableName);
+			continue;
+		}
+
+		NSString * sql = [NSString stringWithFormat:@"CREATE UNIQUE INDEX IF NOT EXISTS %@ ON %@ (%@)",
 			keyName, tableName, keyName];
 		NZSQLiteStatement * stmt = [NZSQLiteStatement statementWithDatabase:self sql:sql];
 		[stmt exec];
@@ -266,9 +309,142 @@ static void cleanup()
 	return YES;
 }
 
-+(BOOL)createTableForClass:(Class)className withKeys:(NSArray *)keyList
++(BOOL)createTableForClass:(Class)className withKeys:(NSArray *)keyList uniqueKeys:(NSArray *)uniqueKeyList
 {
-	return [[NZSQLiteDatabase sharedDatabase] createTableForClass:className withKeys:keyList];
+	return [[NZSQLiteDatabase sharedDatabase]
+		createTableForClass:className withKeys:keyList uniqueKeys:uniqueKeyList];
+}
+
+-(sqlite3_int64)insertObject:(id)object
+{
+	if (!database || !object)
+		return -1;
+
+	Class className = [object class];
+	NSString * tableName = NSStringFromClass(className);
+	NSDictionary * properties = propertiesForClass(className);
+
+	NSArray * allProperties = properties.allKeys;
+	NSString * fields = [allProperties componentsJoinedByString:@", "];
+
+	NSMutableArray * allValues = [NSMutableArray arrayWithCapacity:allProperties.count];
+	for (NSString * field : allProperties)
+		[allValues addObject:[@":" stringByAppendingString:field]];
+	NSString * values = [allValues componentsJoinedByString:@", "];
+
+	SQLiteDatabase::Locker locker(*database);
+
+	NSString * sql = [NSString stringWithFormat:@"INSERT INTO %@ (%@) VALUES (%@)", tableName, fields, values];
+	NZSQLiteStatement * statement = [NZSQLiteStatement statementWithDatabase:self sql:sql];
+	[statement bindFromObject:object];
+	if (![statement exec])
+		return -1;
+
+	return sqlite3_last_insert_rowid(database->handle());
+}
+
++(sqlite3_int64)insertObject:(id)object
+{
+	return [[NZSQLiteDatabase sharedDatabase] insertObject:object];
+}
+
+-(sqlite3_int64)replaceObject:(id)object
+{
+	if (!database || !object)
+		return -1;
+
+	Class className = [object class];
+	NSString * tableName = NSStringFromClass(className);
+	NSDictionary * properties = propertiesForClass(className);
+
+	NSArray * allProperties = properties.allKeys;
+	NSString * fields = [allProperties componentsJoinedByString:@", "];
+
+	NSMutableArray * allValues = [NSMutableArray arrayWithCapacity:allProperties.count];
+	for (NSString * field : allProperties)
+		[allValues addObject:[@":" stringByAppendingString:field]];
+	NSString * values = [allValues componentsJoinedByString:@", "];
+
+	SQLiteDatabase::Locker locker(*database);
+
+	NSString * sql = [NSString stringWithFormat:@"REPLACE INTO %@ (%@) VALUES (%@)", tableName, fields, values];
+	NZSQLiteStatement * statement = [NZSQLiteStatement statementWithDatabase:self sql:sql];
+	[statement bindFromObject:object];
+	if (![statement exec])
+		return -1;
+
+	return sqlite3_last_insert_rowid(database->handle());
+}
+
++(sqlite3_int64)replaceObject:(id)object
+{
+	return [[NZSQLiteDatabase sharedDatabase] replaceObject:object];
+}
+
+-(sqlite3_int64)objectCountForClass:(Class)className
+{
+	if (!database)
+		return 0;
+
+	NSString * sql = [NSString stringWithFormat:@"SELECT COUNT(*) FROM %@", NSStringFromClass(className)];
+
+	__block sqlite3_int64 count = 0;
+	[self exec:sql withBlock:^(NZSQLiteCursor * cursor){ count = [cursor int64ValueAtIndex:0]; } limit:1];
+
+	return count;
+}
+
++(sqlite3_int64)objectCountForClass:(Class)className
+{
+	return [[NZSQLiteDatabase sharedDatabase] objectCountForClass:className];
+}
+
+-(id)selectObjectOfClass:(Class)className index:(size_t)index
+{
+	NSString * sql = [NSString stringWithFormat:@"SELECT * FROM %@ LIMIT 1 OFFSET %lu",
+		NSStringFromClass(className), (unsigned long)index];
+	return [self selectObjectOfClass:className sql:sql];
+}
+
++(id)selectObjectOfClass:(Class)className index:(size_t)index
+{
+	return [[NZSQLiteDatabase sharedDatabase] selectObjectOfClass:className index:index];
+}
+
+-(id)selectObjectOfClass:(Class)className index:(size_t)index orderBy:(NSString *)orderBy
+{
+	NSString * sql = [NSString stringWithFormat:@"SELECT * FROM %@ ORDER BY %@ LIMIT 1 OFFSET %lu",
+		NSStringFromClass(className), orderBy, (unsigned long)index];
+	return [self selectObjectOfClass:className sql:sql];
+}
+
++(id)selectObjectOfClass:(Class)className index:(size_t)index orderBy:(NSString *)orderBy
+{
+	return [[NZSQLiteDatabase sharedDatabase] selectObjectOfClass:className index:index orderBy:orderBy];
+}
+
+-(id)selectObjectOfClass:(Class)className where:(NSString *)where
+{
+	NSString * sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ LIMIT 1",
+		NSStringFromClass(className), where];
+	return [self selectObjectOfClass:className sql:sql];
+}
+
++(id)selectObjectOfClass:(Class)className where:(NSString *)where
+{
+	return [[NZSQLiteDatabase sharedDatabase] selectObjectOfClass:className where:where];
+}
+
+-(id)selectObjectOfClass:(Class)className where:(NSString *)where orderBy:(NSString *)orderBy
+{
+	NSString * sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ ORDER BY %@ LIMIT 1",
+		NSStringFromClass(className), where, orderBy];
+	return [self selectObjectOfClass:className sql:sql];
+}
+
++(id)selectObjectOfClass:(Class)className where:(NSString *)where orderBy:(NSString *)orderBy
+{
+	return [[NZSQLiteDatabase sharedDatabase] selectObjectOfClass:className where:where orderBy:orderBy];
 }
 
 -(id)selectObjectOfClass:(Class)className sql:(NSString *)sql
@@ -286,6 +462,53 @@ static void cleanup()
 +(id)selectObjectOfClass:(Class)className sql:(NSString *)sql
 {
 	return [[NZSQLiteDatabase sharedDatabase] selectObjectOfClass:className sql:sql];
+}
+
+-(NSMutableArray *)selectObjectsOfClass:(Class)className
+{
+	NSString * sql = [NSString stringWithFormat:@"SELECT * FROM %@", NSStringFromClass(className)];
+	return [self selectObjectsOfClass:className sql:sql];
+}
+
++(NSMutableArray *)selectObjectsOfClass:(Class)className
+{
+	return [[NZSQLiteDatabase sharedDatabase] selectObjectsOfClass:className];
+}
+
+-(NSMutableArray *)selectObjectsOfClass:(Class)className orderBy:(NSString *)orderBy
+{
+	NSString * sql = [NSString stringWithFormat:@"SELECT * FROM %@ ORDER BY %@",
+		NSStringFromClass(className), orderBy];
+	return [self selectObjectsOfClass:className sql:sql];
+}
+
++(NSMutableArray *)selectObjectsOfClass:(Class)className orderBy:(NSString *)orderBy
+{
+	return [[NZSQLiteDatabase sharedDatabase] selectObjectsOfClass:className orderBy:orderBy];
+}
+
+-(NSMutableArray *)selectObjectsOfClass:(Class)className where:(NSString *)where
+{
+	NSString * sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@",
+		NSStringFromClass(className), where];
+	return [self selectObjectsOfClass:className sql:sql];
+}
+
++(NSMutableArray *)selectObjectsOfClass:(Class)className where:(NSString *)where
+{
+	return [[NZSQLiteDatabase sharedDatabase] selectObjectsOfClass:className where:where];
+}
+
+-(NSMutableArray *)selectObjectsOfClass:(Class)className where:(NSString *)where orderBy:(NSString *)orderBy
+{
+	NSString * sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ ORDER BY %@",
+		NSStringFromClass(className), where, orderBy];
+	return [self selectObjectsOfClass:className sql:sql];
+}
+
++(NSMutableArray *)selectObjectsOfClass:(Class)className where:(NSString *)where orderBy:(NSString *)orderBy
+{
+	return [[NZSQLiteDatabase sharedDatabase] selectObjectsOfClass:className where:where orderBy:orderBy];
 }
 
 -(NSMutableArray *)selectObjectsOfClass:(Class)className sql:(NSString *)sql
