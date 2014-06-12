@@ -36,6 +36,7 @@
 -(void)dealloc;
 +(NZSQLiteStatement *)statementWithSQL:(NSString *)sql;
 +(NZSQLiteStatement *)statementWithDatabase:(NZSQLiteDatabase *)database sql:(NSString *)sql;
+-(int)parameterIndex:(NSString *)name;
 -(void)bindNullAtIndex:(int)index;
 -(void)bindInt:(int)value atIndex:(int)index;
 -(void)bindInt64:(sqlite3_int64)value atIndex:(int)index;
@@ -52,4 +53,5 @@
 -(void)bindBlob:(const void *)data size:(size_t)size atIndex:(int)index withDestructor:(void(*)(void *))destructor;
 -(BOOL)exec;
 -(BOOL)execWithBlock:(void(^)(NZSQLiteCursor *))block;
+-(BOOL)execWithBlock:(void(^)(NZSQLiteCursor *))block limit:(size_t)limit;
 @end

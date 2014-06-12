@@ -21,29 +21,5 @@
 // THE SOFTWARE.
 //
 #import <Foundation/Foundation.h>
-#import "../sqlite_cursor.h"
 
-@interface NZSQLiteCursor : NSObject
-{
-	const SQLiteCursor * ref;
-	NSDictionary * columns;
-}
-+(NZSQLiteCursor *)cursor;
--(void)dealloc;
--(void)setRef:(const SQLiteCursor *)r;
--(int)numColumns;
--(NSString *)columnNameAtIndex:(int)index;
--(NSDictionary *)columns;
--(BOOL)isNullAtIndex:(int)index;
--(int)intValueAtIndex:(int)index;
--(sqlite3_int64)int64ValueAtIndex:(int)index;
--(size_t)sizeValueAtIndex:(int)index;
--(time_t)timeValueAtIndex:(int)index;
--(float)floatValueAtIndex:(int)index;
--(double)doubleValueAtIndex:(int)index;
--(NSNumber *)numericValueAtIndex:(int)index;
--(const char *)textValueAtIndex:(int)index;
--(NSString *)stringValueAtIndex:(int)index;
--(id)newObjectWithClass:(Class)className;
--(void)fillObject:(id)object;
-@end
+NSDictionary * propertiesForClass(Class className);

@@ -78,6 +78,7 @@ private:
 
 	static void exec(Locker & locker, sqlite3_stmt * stmt);
 	static void exec(Locker & locker, sqlite3_stmt * stmt, const std::function<void()> & onRow);
+	static void exec(Locker & locker, sqlite3_stmt * stmt, const std::function<void()> & onRow, size_t limit);
 
 	SQLiteDatabase(const SQLiteDatabase &) = delete;
 	SQLiteDatabase & operator=(const SQLiteDatabase &) = delete;

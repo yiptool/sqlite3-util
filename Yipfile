@@ -23,8 +23,14 @@ THE SOFTWARE."
 import sqlite3
 import cxx-util
 
+defines:ios,osx
+{
+	SQLITE_ENABLE_COLUMN_METADATA
+}
+
 public_headers
 {
+	apple/objc_properties.h
 	apple/sqlite_cursor.h
 	apple/sqlite_database.h
 	apple/sqlite_statement.h
@@ -41,6 +47,7 @@ sources
 
 sources:ios,osx
 {
+	apple/objc_properties.mm
 	apple/sqlite_cursor.mm
 	apple/sqlite_database.mm
 	apple/sqlite_statement.mm

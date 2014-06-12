@@ -51,8 +51,15 @@ public:
 	void bindString(int index, const std::string & string);
 	void bindBlob(int index, const void * data, size_t size, void (* destructor)(void *) = SQLITE_TRANSIENT);
 
+	int parameterIndex(const char * name) const;
+	int parameterIndex(const std::string & name) const;
+
+	int parameterIndex(const char * name, const std::nothrow_t &) const noexcept;
+	int parameterIndex(const std::string & name, const std::nothrow_t &) const noexcept;
+
 	void exec();
 	void exec(const std::function<void(const SQLiteCursor & cursor)> & onRow);
+	void exec(const std::function<void(const SQLiteCursor & cursor)> & onRow, size_t limit);
 
 private:
 	sqlite3_stmt * m_Handle;

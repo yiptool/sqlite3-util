@@ -31,6 +31,15 @@ class SQLiteStatement;
 class SQLiteCursor
 {
 public:
+	enum ColumnType
+	{
+		ColumnNull = SQLITE_NULL,
+		ColumnInt = SQLITE_INTEGER,
+		ColumnFloat = SQLITE_FLOAT,
+		ColumnText = SQLITE_TEXT,
+		ColumnBlob = SQLITE_BLOB,
+	};
+
 	inline bool isNull(int index) const noexcept { return sqlite3_column_type(m_Cursor, index) == SQLITE_NULL; }
 
 	inline int toInt(int index) const noexcept { return sqlite3_column_int(m_Cursor, index); }
@@ -50,6 +59,10 @@ public:
 			static_cast<size_t>(sqlite3_column_bytes(m_Cursor, index))
 		);
 	}
+
+	inline int numColumns() const noexcept { return sqlite3_column_count(m_Cursor); }
+	inline const char * columnName(int n) const noexcept { return sqlite3_column_name(m_Cursor, n); }
+	inline ColumnType columnType(int n) const noexcept { return ColumnType(sqlite3_column_type(m_Cursor, n)); }
 
 private:
 	sqlite3_stmt * m_Cursor;

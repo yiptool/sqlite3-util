@@ -35,4 +35,12 @@
 -(const std::shared_ptr<SQLiteDatabase> &)cxxObject;
 -(BOOL)transaction:(void(^)())protectedBlock;
 +(BOOL)transaction:(void(^)())protectedBlock;
+-(BOOL)createTableForClass:(Class)className;
++(BOOL)createTableForClass:(Class)className;
+-(BOOL)createTableForClass:(Class)className withKeys:(NSSet *)keys;
++(BOOL)createTableForClass:(Class)className withKeys:(NSSet *)keys;
+-(id)selectObjectOfClass:(Class)className sql:(NSString *)sql;
++(id)selectObjectOfClass:(Class)className sql:(NSString *)sql;
+-(NSMutableArray *)selectObjectsOfClass:(Class)className sql:(NSString *)sql;
++(NSMutableArray *)selectObjectsOfClass:(Class)className sql:(NSString *)sql;
 @end

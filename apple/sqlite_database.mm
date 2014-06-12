@@ -21,6 +21,8 @@
 // THE SOFTWARE.
 //
 #import "sqlite_database.h"
+#import "sqlite_statement.h"
+#import "objc_properties.h"
 #import <yip-imports/cxx-util/macros.h>
 #import <cstdlib>
 #import <exception>
@@ -107,6 +109,120 @@ static void cleanup()
 +(BOOL)transaction:(void(^)())protectedBlock
 {
 	return [[NZSQLiteDatabase sharedDatabase] transaction:protectedBlock];
+}
+
+-(BOOL)createTableForClass:(Class)className
+{
+	return [self createTableForClass:className withKeys:nil];
+}
+
++(BOOL)createTableForClass:(Class)className
+{
+	return [[NZSQLiteDatabase sharedDatabase] createTableForClass:className withKeys:nil];
+}
+
+-(BOOL)createTableForClass:(Class)className withKeys:(NSSet *)keys
+{
+	if (!database)
+		return NO;
+
+	NSString * tableName = NSStringFromClass(className);
+	NSDictionary * properties = propertiesForClass(className);
+
+	SQLiteDatabase::Locker locker(*database);
+
+	__block BOOL hasTable = NO;
+	NZSQLiteStatement * stmt = [NZSQLiteStatement statementWithDatabase:self
+		sql:@"SELECT name FROM sqlite_master WHERE type='table' AND name=?"];
+	[stmt bindString:tableName atIndex:1];
+	[stmt execWithBlock:^(NZSQLiteCursor * cursor){ hasTable = YES; } limit:1];
+
+	if (!hasTable)
+	{
+		NSLog(@"DB: Creating table %@", tableName);
+
+		NSString * sql = [NSString stringWithFormat:
+			@"CREATE TABLE %@ (_rowid_ INTEGER PRIMARY KEY AUTOINCREMENT", tableName];
+		for (NSString * propertyName in properties)
+			sql = [sql stringByAppendingFormat:@", %@", propertyName];
+		sql = [sql stringByAppendingString:@")"];
+
+		NZSQLiteStatement * stmt = [NZSQLiteStatement statementWithDatabase:self sql:sql];
+		[stmt exec];
+	}
+	else
+	{
+		NSLog(@"DB: Validating table %@", tableName);
+		for (NSString * propName in properties)
+		{
+			int err = sqlite3_table_column_metadata(database->handle(), nullptr, [tableName UTF8String],
+				[propName UTF8String], nullptr, nullptr, nullptr, nullptr, nullptr);
+			if (UNLIKELY(err != SQLITE_OK))
+			{
+				NSLog(@"DB: Adding column %@ to table %@", propName, tableName);
+				NSString * sql = [NSString stringWithFormat:@"ALTER TABLE %@ ADD COLUMN %@", tableName, propName];
+				NZSQLiteStatement * stmt = [NZSQLiteStatement statementWithDatabase:self sql:sql];
+				[stmt exec];
+			}
+		}
+	}
+
+	for (NSString * keyName in keys)
+	{
+		if (![properties objectForKey:keyName])
+		{
+			NSLog(@"DB: Attempted to create key on non-existent property %@ of class %@.",
+				keyName, tableName);
+			continue;
+		}
+
+		NSString * sql = [NSString stringWithFormat:@"CREATE INDEX IF NOT EXISTS %@ ON %@ (%@)",
+			keyName, tableName, keyName];
+		NZSQLiteStatement * stmt = [NZSQLiteStatement statementWithDatabase:self sql:sql];
+		[stmt exec];
+	}
+
+	return YES;
+}
+
++(BOOL)createTableForClass:(Class)className withKeys:(NSSet *)keys
+{
+	return [[NZSQLiteDatabase sharedDatabase] createTableForClass:className withKeys:keys];
+}
+
+-(id)selectObjectOfClass:(Class)className sql:(NSString *)sql
+{
+	NZSQLiteStatement * statement = [NZSQLiteStatement statementWithDatabase:self sql:sql];
+
+	__block id result = nil;
+	[statement execWithBlock:^(NZSQLiteCursor * cursor) {
+		result = [[cursor newObjectWithClass:className] autorelease];
+	} limit:1];
+
+	return result;
+}
+
++(id)selectObjectOfClass:(Class)className sql:(NSString *)sql
+{
+	return [[NZSQLiteDatabase sharedDatabase] selectObjectOfClass:className sql:sql];
+}
+
+-(NSMutableArray *)selectObjectsOfClass:(Class)className sql:(NSString *)sql
+{
+	NZSQLiteStatement * statement = [NZSQLiteStatement statementWithDatabase:self sql:sql];
+	NSMutableArray * result = [[[NSMutableArray alloc] init] autorelease];
+
+	[statement execWithBlock:^(NZSQLiteCursor * cursor) {
+		id object = [[cursor newObjectWithClass:className] autorelease];
+		[result addObject:object];
+	}];
+
+	return result;
+}
+
++(NSMutableArray *)selectObjectsOfClass:(Class)className sql:(NSString *)sql
+{
+	return [[NZSQLiteDatabase sharedDatabase] selectObjectsOfClass:className sql:sql];
 }
 
 @end

@@ -100,13 +100,30 @@ void SQLiteStatement::bindBlob(int index, const void * data, size_t size, void (
 	checkError(sqlite3_bind_blob(m_Handle, index, data, static_cast<int>(size), destructor), index);
 }
 
-void SQLiteStatement::checkError(int err, int index)
+int SQLiteStatement::parameterIndex(const char * name) const
 {
-	if (UNLIKELY(err != SQLITE_OK))
+	int index = sqlite3_bind_parameter_index(m_Handle, name);
+	if (!index)
 	{
-		throw std::runtime_error(fmt() << "unable to bind value for parameter #" << index << " of query '"
-			<< sqlite3_sql(m_Handle) << "': " << sqlite3_errstr(err));
+		throw std::runtime_error(fmt()
+			<< "there is no parameter '" << name << "' in query '" << sqlite3_sql(m_Handle) << "'.");
 	}
+	return index;
+}
+
+int SQLiteStatement::parameterIndex(const std::string & name) const
+{
+	return parameterIndex(name.c_str());
+}
+
+int SQLiteStatement::parameterIndex(const char * name, const std::nothrow_t &) const noexcept
+{
+	return sqlite3_bind_parameter_index(m_Handle, name);
+}
+
+int SQLiteStatement::parameterIndex(const std::string & name, const std::nothrow_t &) const noexcept
+{
+	return parameterIndex(name.c_str(), std::nothrow);
 }
 
 void SQLiteStatement::exec()
@@ -119,4 +136,19 @@ void SQLiteStatement::exec(const std::function<void(const SQLiteCursor &)> & onR
 {
 	SQLiteDatabase::Locker locker(m_Handle);
 	SQLiteDatabase::exec(locker, m_Handle, [&onRow, this](){ onRow(SQLiteCursor(m_Handle)); });
+}
+
+void SQLiteStatement::exec(const std::function<void(const SQLiteCursor &)> & onRow, size_t limit)
+{
+	SQLiteDatabase::Locker locker(m_Handle);
+	SQLiteDatabase::exec(locker, m_Handle, [&onRow, this](){ onRow(SQLiteCursor(m_Handle)); }, limit);
+}
+
+void SQLiteStatement::checkError(int err, int index)
+{
+	if (UNLIKELY(err != SQLITE_OK))
+	{
+		throw std::runtime_error(fmt() << "unable to bind value for parameter #" << index << " of query '"
+			<< sqlite3_sql(m_Handle) << "': " << sqlite3_errstr(err));
+	}
 }

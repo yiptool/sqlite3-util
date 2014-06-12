@@ -250,3 +250,38 @@ void SQLiteDatabase::exec(Locker & locker, sqlite3_stmt * stmt, const std::funct
 
 	sqlite3_reset(stmt);
 }
+
+void SQLiteDatabase::exec(Locker & locker, sqlite3_stmt * stmt, const std::function<void()> & onRow, size_t limit)
+{
+	try
+	{
+		do
+		{
+			int err = sqlite3_step(stmt);
+			if (err == SQLITE_DONE)
+				break;
+			else if (UNLIKELY(err != SQLITE_ROW))
+			{
+				sqlite3 * db = sqlite3_db_handle(stmt);
+				throw std::runtime_error(fmt()
+					<< "unable to execute statement '" << sqlite3_sql(stmt) << "': " << sqlite3_errmsg(db));
+			}
+
+			if (limit == 0)
+				break;
+			--limit;
+
+			locker.unlock();
+			onRow();
+			locker.relock();
+		}
+		while (limit != 0);
+	}
+	catch (...)
+	{
+		sqlite3_reset(stmt);
+		throw;
+	}
+
+	sqlite3_reset(stmt);
+}

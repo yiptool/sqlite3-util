@@ -71,6 +71,20 @@
 	return [[[NZSQLiteStatement alloc] initWithDatabase:database sql:sql] autorelease];
 }
 
+-(int)parameterIndex:(NSString *)name
+{
+	try
+	{
+		if (statement.get())
+			return statement->parameterIndex([name UTF8String]);
+	}
+	catch (const std::exception & e)
+	{
+		NSLog(@"%s", e.what());
+	}
+	return 0;
+}
+
 -(void)bindNullAtIndex:(int)index
 {
 	try
@@ -275,6 +289,30 @@
 				block(cursorWrapper);
 			cursorWrapper.ref = nil;
 		});
+
+		return YES;
+	}
+	catch (const std::exception & e)
+	{
+		NSLog(@"%s", e.what());
+		return NO;
+	}
+}
+
+-(BOOL)execWithBlock:(void(^)(NZSQLiteCursor *))block limit:(size_t)limit
+{
+	try
+	{
+		if (!statement.get())
+			return NO;
+
+		NZSQLiteCursor * cursorWrapper = [NZSQLiteCursor cursor];
+		statement->exec([&cursorWrapper, &block](const SQLiteCursor & cursor) {
+			cursorWrapper.ref = &cursor;
+			if (block)
+				block(cursorWrapper);
+			cursorWrapper.ref = nil;
+		}, limit);
 
 		return YES;
 	}
