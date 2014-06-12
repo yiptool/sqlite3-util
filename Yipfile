@@ -25,6 +25,9 @@ import cxx-util
 
 public_headers
 {
+	apple/sqlite_cursor.h
+	apple/sqlite_database.h
+	apple/sqlite_statement.h
 	sqlite_cursor.h
 	sqlite_database.h
 	sqlite_statement.h
@@ -34,4 +37,11 @@ sources
 {
 	sqlite_database.cpp
 	sqlite_statement.cpp
+}
+
+sources:ios,osx
+{
+	apple/sqlite_cursor.mm
+	apple/sqlite_database.mm
+	apple/sqlite_statement.mm
 }

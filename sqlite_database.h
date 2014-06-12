@@ -52,6 +52,7 @@ public:
 		Locker & operator=(const Locker &) = delete;
 	};
 
+	SQLiteDatabase(const char * file);
 	SQLiteDatabase(const std::string & file);
 	~SQLiteDatabase();
 

@@ -33,6 +33,7 @@ class SQLiteDatabase;
 class SQLiteStatement
 {
 public:
+	SQLiteStatement(SQLiteDatabase & database, const char * sql);
 	SQLiteStatement(SQLiteDatabase & database, const std::string & sql);
 	~SQLiteStatement() noexcept;
 

@@ -63,6 +63,20 @@ void SQLiteDatabase::Locker::relock() noexcept
 
 /* SQLiteDatabase */
 
+SQLiteDatabase::SQLiteDatabase(const char * file)
+	: m_File(file),
+	  m_StmtBegin(nullptr),
+	  m_StmtRollback(nullptr),
+	  m_StmtCommit(nullptr)
+{
+	int err = sqlite3_open_v2(file, &m_Handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
+	if (UNLIKELY(err != SQLITE_OK))
+	{
+		throw std::runtime_error(fmt()
+			<< "unable to open sqlite database '" << file << "': " << sqlite3_errstr(err));
+	}
+}
+
 SQLiteDatabase::SQLiteDatabase(const std::string & file)
 	: m_File(file),
 	  m_StmtBegin(nullptr),

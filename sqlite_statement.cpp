@@ -26,6 +26,13 @@
 #include <yip-imports/cxx-util/fmt.h>
 #include <stdexcept>
 
+SQLiteStatement::SQLiteStatement(SQLiteDatabase & database, const char * sql)
+	: m_Handle(nullptr)
+{
+	SQLiteDatabase::Locker locker(database);
+	database.prepare(locker, m_Handle, sql);
+}
+
 SQLiteStatement::SQLiteStatement(SQLiteDatabase & database, const std::string & sql)
 	: m_Handle(nullptr)
 {
