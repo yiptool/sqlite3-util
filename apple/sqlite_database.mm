@@ -411,6 +411,18 @@ static void cleanup()
 	return [[NZSQLiteDatabase sharedDatabase] selectObjectOfClass:className index:index];
 }
 
+-(id)selectObjectOfClass:(Class)className index:(size_t)index where:(NSString *)where
+{
+	NSString * sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ LIMIT 1 OFFSET %lu",
+		NSStringFromClass(className), where, (unsigned long)index];
+	return [self selectObjectOfClass:className sql:sql];
+}
+
++(id)selectObjectOfClass:(Class)className index:(size_t)index where:(NSString *)where
+{
+	return [[NZSQLiteDatabase sharedDatabase] selectObjectOfClass:className index:index where:where];
+}
+
 -(id)selectObjectOfClass:(Class)className index:(size_t)index orderBy:(NSString *)orderBy
 {
 	NSString * sql = [NSString stringWithFormat:@"SELECT * FROM %@ ORDER BY %@ LIMIT 1 OFFSET %lu",
@@ -421,6 +433,18 @@ static void cleanup()
 +(id)selectObjectOfClass:(Class)className index:(size_t)index orderBy:(NSString *)orderBy
 {
 	return [[NZSQLiteDatabase sharedDatabase] selectObjectOfClass:className index:index orderBy:orderBy];
+}
+
+-(id)selectObjectOfClass:(Class)className index:(size_t)index where:(NSString *)where orderBy:(NSString *)orderBy
+{
+	NSString * sql = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ ORDER BY %@ LIMIT 1 OFFSET %lu",
+		NSStringFromClass(className), where, orderBy, (unsigned long)index];
+	return [self selectObjectOfClass:className sql:sql];
+}
+
++(id)selectObjectOfClass:(Class)className index:(size_t)index where:(NSString *)where orderBy:(NSString *)orderBy
+{
+	return [[NZSQLiteDatabase sharedDatabase] selectObjectOfClass:className index:index where:where orderBy:orderBy];
 }
 
 -(id)selectObjectOfClass:(Class)className where:(NSString *)where

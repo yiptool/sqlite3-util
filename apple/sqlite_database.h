@@ -59,8 +59,12 @@
 +(sqlite3_int64)objectCountForClass:(Class)className;
 -(id)selectObjectOfClass:(Class)className index:(size_t)index;
 +(id)selectObjectOfClass:(Class)className index:(size_t)index;
+-(id)selectObjectOfClass:(Class)className index:(size_t)index where:(NSString *)where;
++(id)selectObjectOfClass:(Class)className index:(size_t)index where:(NSString *)where;
 -(id)selectObjectOfClass:(Class)className index:(size_t)index orderBy:(NSString *)orderBy;
 +(id)selectObjectOfClass:(Class)className index:(size_t)index orderBy:(NSString *)orderBy;
+-(id)selectObjectOfClass:(Class)className index:(size_t)index where:(NSString *)where orderBy:(NSString *)orderBy;
++(id)selectObjectOfClass:(Class)className index:(size_t)index where:(NSString *)where orderBy:(NSString *)orderBy;
 -(id)selectObjectOfClass:(Class)className where:(NSString *)where;
 +(id)selectObjectOfClass:(Class)className where:(NSString *)where;
 -(id)selectObjectOfClass:(Class)className where:(NSString *)where orderBy:(NSString *)orderBy;

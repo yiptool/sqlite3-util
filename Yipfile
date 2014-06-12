@@ -34,6 +34,7 @@ public_headers
 	apple/sqlite_cursor.h
 	apple/sqlite_database.h
 	apple/sqlite_statement.h
+	ios/sqlite_data_source.h
 	sqlite_cursor.h
 	sqlite_database.h
 	sqlite_statement.h
@@ -51,6 +52,11 @@ sources:ios,osx
 	apple/sqlite_cursor.mm
 	apple/sqlite_database.mm
 	apple/sqlite_statement.mm
+}
+
+sources:ios
+{
+	ios/sqlite_data_source.mm
 }
 
 app_sources:ios,osx
