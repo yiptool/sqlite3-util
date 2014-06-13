@@ -171,7 +171,8 @@
 		NSNumber * columnIndex = [columnIndexes objectForKey:propertyName];
 		if (UNLIKELY(!columnIndex))
 		{
-			NSLog(@"DB: no column for property '%@' of class '%@'.", propertyName, [object className]);
+			NSLog(@"DB: no column for property '%@' of class '%@'.",
+				propertyName, NSStringFromClass([object class]));
 			continue;
 		}
 		int column = [columnIndex intValue];
@@ -203,13 +204,13 @@
 			else
 			{
 				NSLog(@"DB: property '%@' of class '%@' has unsupported type '%@'.",
-					propertyName, [object className], propertyType);
+					propertyName, NSStringFromClass([object class]), propertyType);
 			}
 		}
 		@catch (id e)
 		{
 			NSLog(@"DB: unable to set value for property '%@' of class '%@': %@",
-				propertyName, [object className], e);
+				propertyName, NSStringFromClass([object class]), e);
 		}
 	}
 }

@@ -33,8 +33,8 @@
 }
 @property (nonatomic, retain, readonly) NZSQLiteDatabase * database;
 @property (nonatomic, assign) NSInteger section;
-@property (nonatomic, copy) NSObject * sqlWhere;
-@property (nonatomic, copy) NSObject * sqlOrderBy;
+@property (nonatomic, copy) NSString * sqlWhere;
+@property (nonatomic, copy) NSString * sqlOrderBy;
 -(id)initWithTableView:(UITableView *)tableView dataClass:(Class)dataClass cellClass:(Class)cellClass;
 -(id)initWithDatabase:(NZSQLiteDatabase *)db tableView:(UITableView *)tableView dataClass:(Class)dataClass
 	cellClass:(Class)cellClass;

@@ -33,7 +33,7 @@
 -(id)initWithTableView:(UITableView *)tableView dataClass:(Class)dataClass cellClass:(Class)cellClass
 {
 	NZSQLiteDatabase * db = [NZSQLiteDatabase sharedDatabase];
-	return [self initWithDatabase: tableView:tableView dataClass:dataClass cellClass:cellClass];
+	return [self initWithDatabase:db tableView:tableView dataClass:dataClass cellClass:cellClass];
 }
 
 -(id)initWithDatabase:(NZSQLiteDatabase *)db tableView:(UITableView *)tableView dataClass:(Class)dataClass
@@ -69,7 +69,7 @@
 -(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)sectionIndex
 {
 	if (sectionIndex == section)
-		return [database objectCountForClass:className];
+		return NSInteger([database objectCountForClass:className]);
 	return 0;
 }
 
@@ -78,9 +78,11 @@
 	if (indexPath.section != section)
 		return 0;
 
-	id<NZSQLiteCell> * cell = [tableView dequeueReusableCellWithIdentifier:NSStringFromClass(className)];
+	UITableViewCell<NZSQLiteCell> * cell =
+		[tableView dequeueReusableCellWithIdentifier:NSStringFromClass(className)];
 
 	assert(cell != nil);
+	assert([cell isMemberOfClass:[UITableViewCell class]]);
 	assert([cell conformsToProtocol:@protocol(NZSQLiteCell)]);
 
 	size_t index = size_t(indexPath.row);
