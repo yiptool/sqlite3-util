@@ -151,6 +151,18 @@
 	return [NSString stringWithUTF8String:[self textValueAtIndex:index]];
 }
 
+-(NSDate *)dateValueAtIndex:(int)index
+{
+	if (ref->isNull(index))
+		return nil;
+
+	NSDateFormatter * formatter = [[[NSDateFormatter alloc] init] autorelease];
+	formatter.timeZone = [NSTimeZone timeZoneWithName:@"UTC"];
+	formatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
+
+	return [formatter dateFromString:[NSString stringWithUTF8String:[self textValueAtIndex:index]]];
+}
+
 -(id)newObjectWithClass:(Class)className
 {
 	id object = [[className alloc] init];
@@ -184,6 +196,8 @@
 				[object setValue:[self stringValueAtIndex:column] forKey:propertyName];
 			else if ([propertyType isEqualToString:@"NSNumber"])
 				[object setValue:[self numericValueAtIndex:column] forKey:propertyName];
+			else if ([propertyType isEqualToString:@"NSDate"])
+				[object setValue:[self dateValueAtIndex:column] forKey:propertyName];
 			else if([propertyType isEqualToString:@"B"] ||				// bool
 					[propertyType isEqualToString:@"c"] ||				// char
 					[propertyType isEqualToString:@"C"] ||				// unsigned char

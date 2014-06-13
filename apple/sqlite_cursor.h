@@ -44,6 +44,7 @@
 -(NSNumber *)numericValueAtIndex:(int)index;
 -(const char *)textValueAtIndex:(int)index;
 -(NSString *)stringValueAtIndex:(int)index;
+-(NSDate *)dateValueAtIndex:(int)index;
 -(id)newObjectWithClass:(Class)className;
 -(void)fillObject:(id)object;
 @end

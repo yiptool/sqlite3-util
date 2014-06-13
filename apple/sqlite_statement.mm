@@ -282,6 +282,12 @@
 				[self bindNullAtIndex:column];
 			else if ([propertyType isEqualToString:@"NSString"])
 				[self bindString:value atIndex:column];
+			else if ([propertyType isEqualToString:@"NSDate"])
+			{
+				NSTimeZone * tz = [NSTimeZone timeZoneWithName:@"UTC"];
+				NSString * date = [value descriptionWithCalendarFormat:@"%Y-%m-%d %H:%M:%" timeZone:tz locale:nil];
+				[self bindString:date atIndex:column];
+			}
 			else if ([propertyType isEqualToString:@"NSNumber"] ||
 					 [propertyType isEqualToString:@"B"] ||				// bool
 					 [propertyType isEqualToString:@"c"] ||				// char
