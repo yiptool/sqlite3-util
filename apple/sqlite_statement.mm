@@ -284,9 +284,10 @@
 				[self bindString:value atIndex:column];
 			else if ([propertyType isEqualToString:@"NSDate"])
 			{
-				NSTimeZone * tz = [NSTimeZone timeZoneWithName:@"UTC"];
-				NSString * date = [(NSDate *)value
-					descriptionWithCalendarFormat:@"%Y-%m-%d %H:%M:%" timeZone:tz locale:nil];
+				NSDateFormatter * formatter = [[[NSDateFormatter alloc] init] autorelease];
+				formatter.timeZone = [NSTimeZone timeZoneWithName:@"UTC"];
+				formatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
+				NSString * date = [formatter stringFromDate:value];
 				[self bindString:date atIndex:column];
 			}
 			else if ([propertyType isEqualToString:@"NSNumber"] ||
