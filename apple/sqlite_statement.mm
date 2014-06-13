@@ -285,7 +285,8 @@
 			else if ([propertyType isEqualToString:@"NSDate"])
 			{
 				NSTimeZone * tz = [NSTimeZone timeZoneWithName:@"UTC"];
-				NSString * date = [value descriptionWithCalendarFormat:@"%Y-%m-%d %H:%M:%" timeZone:tz locale:nil];
+				NSString * date = [(NSDate *)value
+					descriptionWithCalendarFormat:@"%Y-%m-%d %H:%M:%" timeZone:tz locale:nil];
 				[self bindString:date atIndex:column];
 			}
 			else if ([propertyType isEqualToString:@"NSNumber"] ||
@@ -309,13 +310,13 @@
 			else
 			{
 				NSLog(@"DB: property '%@' of class '%@' has unsupported type '%@'.",
-					propertyName, [object className], propertyType);
+					propertyName, NSStringFromClass([object class]), propertyType);
 			}
 		}
 		@catch (id e)
 		{
 			NSLog(@"DB: unable to set value for property '%@' of class '%@': %@",
-				propertyName, [object className], e);
+				propertyName, NSStringFromClass([object class]), e);
 		}
 	}
 }
