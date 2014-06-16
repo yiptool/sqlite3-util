@@ -24,6 +24,7 @@
 #import "sqlite_statement.h"
 #import "objc_properties.h"
 #import <yip-imports/cxx-util/macros.h>
+#import <yip-imports/ios/crypto.h>
 #import <cstdlib>
 #import <exception>
 
@@ -269,39 +270,27 @@ static void cleanup()
 		}
 	}
 
-	for (NSString * keyName in keys)
+	for (NSString * keyFields in keys)
 	{
-		if (![properties objectForKey:keyName])
-		{
-			NSLog(@"DB: Attempted to create key on non-existent property %@ of class %@.",
-				keyName, tableName);
-			continue;
-		}
-
 		NSString * unique = @"";
-		if ([uniqueKeys containsObject:keyName])
+		if ([uniqueKeys containsObject:keyFields])
 			unique = @"UNIQUE ";
 
-		NSString * sql = [NSString stringWithFormat:@"CREATE %@INDEX IF NOT EXISTS %@ ON %@ (%@)",
-			unique, keyName, tableName, keyName];
+		NSString * keyName = iosCalcMd5ForString(keyFields);
+		NSString * sql = [NSString stringWithFormat:@"CREATE %@INDEX IF NOT EXISTS '%@' ON %@ (%@)",
+			unique, keyName, tableName, keyFields];
 		NZSQLiteStatement * stmt = [NZSQLiteStatement statementWithDatabase:self sql:sql];
 		[stmt exec];
 	}
 
-	for (NSString * keyName in uniqueKeys)
+	for (NSString * keyFields in uniqueKeys)
 	{
-		if ([keys containsObject:keyName])
+		if ([keys containsObject:keyFields])
 			continue;
 
-		if (![properties objectForKey:keyName])
-		{
-			NSLog(@"DB: Attempted to create key on non-existent property %@ of class %@.",
-				keyName, tableName);
-			continue;
-		}
-
-		NSString * sql = [NSString stringWithFormat:@"CREATE UNIQUE INDEX IF NOT EXISTS %@ ON %@ (%@)",
-			keyName, tableName, keyName];
+		NSString * keyName = iosCalcMd5ForString(keyFields);
+		NSString * sql = [NSString stringWithFormat:@"CREATE UNIQUE INDEX IF NOT EXISTS '%@' ON %@ (%@)",
+			keyName, tableName, keyFields];
 		NZSQLiteStatement * stmt = [NZSQLiteStatement statementWithDatabase:self sql:sql];
 		[stmt exec];
 	}
