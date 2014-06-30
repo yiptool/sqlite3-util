@@ -45,57 +45,57 @@ SQLiteStatement::~SQLiteStatement() noexcept
 	sqlite3_finalize(m_Handle);
 }
 
-void SQLiteStatement::bindNull(int index)
+void SQLiteStatement::bindNull(int index) const
 {
 	checkError(sqlite3_bind_null(m_Handle, index), index);
 }
 
-void SQLiteStatement::bindInt(int index, int value)
+void SQLiteStatement::bindInt(int index, int value) const
 {
 	checkError(sqlite3_bind_int(m_Handle, index, value), index);
 }
 
-void SQLiteStatement::bindInt64(int index, sqlite3_int64 value)
+void SQLiteStatement::bindInt64(int index, sqlite3_int64 value) const
 {
 	checkError(sqlite3_bind_int64(m_Handle, index, value), index);
 }
 
-void SQLiteStatement::bindSizeT(int index, size_t value)
+void SQLiteStatement::bindSizeT(int index, size_t value) const
 {
 	checkError(sqlite3_bind_int64(m_Handle, index, static_cast<sqlite3_int64>(value)), index);
 }
 
-void SQLiteStatement::bindTimeT(int index, time_t value)
+void SQLiteStatement::bindTimeT(int index, time_t value) const
 {
 	checkError(sqlite3_bind_int64(m_Handle, index, static_cast<sqlite3_int64>(value)), index);
 }
 
-void SQLiteStatement::bindFloat(int index, float value)
+void SQLiteStatement::bindFloat(int index, float value) const
 {
 	checkError(sqlite3_bind_double(m_Handle, index, static_cast<double>(value)), index);
 }
 
-void SQLiteStatement::bindDouble(int index, double value)
+void SQLiteStatement::bindDouble(int index, double value) const
 {
 	checkError(sqlite3_bind_double(m_Handle, index, value), index);
 }
 
-void SQLiteStatement::bindText(int index, const char * text, void (* destructor)(void *))
+void SQLiteStatement::bindText(int index, const char * text, void (* destructor)(void *)) const
 {
 	checkError(sqlite3_bind_text(m_Handle, index, text, -1, destructor), index);
 }
 
-void SQLiteStatement::bindText(int index, const char * text, size_t length, void (* destructor)(void *))
+void SQLiteStatement::bindText(int index, const char * text, size_t length, void (* destructor)(void *)) const
 {
 	checkError(sqlite3_bind_text(m_Handle, index, text, static_cast<int>(length), destructor), index);
 }
 
-void SQLiteStatement::bindString(int index, const std::string & string)
+void SQLiteStatement::bindString(int index, const std::string & string) const
 {
 	bindText(index, string.data(), string.length());
 }
 
-void SQLiteStatement::bindBlob(int index, const void * data, size_t size, void (* destructor)(void *))
+void SQLiteStatement::bindBlob(int index, const void * data, size_t size, void (* destructor)(void *)) const
 {
 	checkError(sqlite3_bind_blob(m_Handle, index, data, static_cast<int>(size), destructor), index);
 }
@@ -126,25 +126,25 @@ int SQLiteStatement::parameterIndex(const std::string & name, const std::nothrow
 	return parameterIndex(name.c_str(), std::nothrow);
 }
 
-void SQLiteStatement::exec()
+void SQLiteStatement::exec() const
 {
 	SQLiteDatabase::Locker locker(m_Handle);
 	SQLiteDatabase::exec(locker, m_Handle);
 }
 
-void SQLiteStatement::exec(const std::function<void(const SQLiteCursor &)> & onRow)
+void SQLiteStatement::exec(const std::function<void(const SQLiteCursor &)> & onRow) const
 {
 	SQLiteDatabase::Locker locker(m_Handle);
 	SQLiteDatabase::exec(locker, m_Handle, [&onRow, this](){ onRow(SQLiteCursor(m_Handle)); });
 }
 
-void SQLiteStatement::exec(const std::function<void(const SQLiteCursor &)> & onRow, size_t limit)
+void SQLiteStatement::exec(const std::function<void(const SQLiteCursor &)> & onRow, size_t limit) const
 {
 	SQLiteDatabase::Locker locker(m_Handle);
 	SQLiteDatabase::exec(locker, m_Handle, [&onRow, this](){ onRow(SQLiteCursor(m_Handle)); }, limit);
 }
 
-void SQLiteStatement::checkError(int err, int index)
+void SQLiteStatement::checkError(int err, int index) const
 {
 	if (UNLIKELY(err != SQLITE_OK))
 	{

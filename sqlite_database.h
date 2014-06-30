@@ -61,6 +61,8 @@ public:
 
 	void transaction(const std::function<void()> & protectedCode);
 
+	int64_t lastInsertId() const;
+
 	void exec(const char * sql);
 	void exec(const std::string & sql);
 	void exec(const char * sql, const std::function<void(const SQLiteCursor & cursor)> & onRow);

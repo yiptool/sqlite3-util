@@ -49,6 +49,10 @@ public:
 	inline float toFloat(int index) const noexcept { return static_cast<float>(sqlite3_column_double(m_Cursor, index)); }
 	inline double toDouble(int index) const noexcept { return sqlite3_column_double(m_Cursor, index); }
 
+	inline size_t columnBytes(int index) const noexcept
+		{ return static_cast<size_t>(sqlite3_column_bytes(m_Cursor, index)); }
+
+	inline const void * toBlob(int index) const noexcept { return sqlite3_column_blob(m_Cursor, index); }
 	inline const char * toText(int index) const noexcept
 		{ return reinterpret_cast<const char *>(sqlite3_column_text(m_Cursor, index)); }
 

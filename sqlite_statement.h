@@ -39,17 +39,17 @@ public:
 
 	inline sqlite3_stmt * handle() const noexcept { return m_Handle; }
 
-	void bindNull(int index);
-	void bindInt(int index, int value);
-	void bindInt64(int index, sqlite3_int64 value);
-	void bindSizeT(int index, size_t value);
-	void bindTimeT(int index, time_t value);
-	void bindFloat(int index, float value);
-	void bindDouble(int index, double value);
-	void bindText(int index, const char * text, void (* destructor)(void *) = SQLITE_TRANSIENT);
-	void bindText(int index, const char * text, size_t length, void (* destructor)(void *) = SQLITE_TRANSIENT);
-	void bindString(int index, const std::string & string);
-	void bindBlob(int index, const void * data, size_t size, void (* destructor)(void *) = SQLITE_TRANSIENT);
+	void bindNull(int index) const;
+	void bindInt(int index, int value) const;
+	void bindInt64(int index, sqlite3_int64 value) const;
+	void bindSizeT(int index, size_t value) const;
+	void bindTimeT(int index, time_t value) const;
+	void bindFloat(int index, float value) const;
+	void bindDouble(int index, double value) const;
+	void bindText(int index, const char * text, void (* destructor)(void *) = SQLITE_TRANSIENT) const;
+	void bindText(int index, const char * text, size_t length, void (* destructor)(void *) = SQLITE_TRANSIENT) const;
+	void bindString(int index, const std::string & string) const;
+	void bindBlob(int index, const void * data, size_t size, void (* destructor)(void *) = SQLITE_TRANSIENT) const;
 
 	int parameterIndex(const char * name) const;
 	int parameterIndex(const std::string & name) const;
@@ -57,14 +57,14 @@ public:
 	int parameterIndex(const char * name, const std::nothrow_t &) const noexcept;
 	int parameterIndex(const std::string & name, const std::nothrow_t &) const noexcept;
 
-	void exec();
-	void exec(const std::function<void(const SQLiteCursor & cursor)> & onRow);
-	void exec(const std::function<void(const SQLiteCursor & cursor)> & onRow, size_t limit);
+	void exec() const;
+	void exec(const std::function<void(const SQLiteCursor & cursor)> & onRow) const;
+	void exec(const std::function<void(const SQLiteCursor & cursor)> & onRow, size_t limit) const;
 
 private:
 	sqlite3_stmt * m_Handle;
 
-	void checkError(int err, int index);
+	void checkError(int err, int index) const;
 
 	SQLiteStatement(const SQLiteStatement &) = delete;
 	SQLiteStatement & operator=(const SQLiteStatement &) = delete;

@@ -68,7 +68,9 @@ SQLiteDatabase::SQLiteDatabase(const char * file)
 	: m_File(file),
 	  m_StmtBegin(nullptr),
 	  m_StmtRollback(nullptr),
-	  m_StmtCommit(nullptr)
+	  m_StmtCommit(nullptr),
+	  m_InTransaction(0),
+	  m_TransactionFailed(false)
 {
 	int err = sqlite3_open_v2(file, &m_Handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
 	if (UNLIKELY(err != SQLITE_OK))
@@ -128,6 +130,11 @@ void SQLiteDatabase::transaction(const std::function<void()> & protectedCode)
 		throw;
 	}
 	commit(locker);
+}
+
+int64_t SQLiteDatabase::lastInsertId() const
+{
+	return sqlite3_last_insert_rowid(m_Handle);
 }
 
 void SQLiteDatabase::exec(const char * sql)
